@@ -374,6 +374,21 @@ Where each key goes, and how to confirm it is picked up: [docs/setup-keys.md](do
 
 Requirements: **Node 22.18+**, **pnpm 10**, **Docker**.
 
+### What works with which launch option
+
+Pick the launch option first, then the way to drive the agent ([A to D above](#ways-to-run-the-agent-read-this-first)). They combine like this:
+
+| Way to drive the agent | Option 1: Docker only | Option 2: local development |
+| :--- | :--- | :--- |
+| **A. Deterministic** | Works, no setup | Works, no setup |
+| **B. AI agent (your LLM key)** | Works. Put `LLM_PROVIDER` and the key in the root `.env` **before** `docker compose up` (Compose passes them into the API container) | Works. Same `.env` keys, then restart the API |
+| **C. OpenClaw** | **Not supported out of the box.** `docker-compose.yml` does not pass the `OPENCLAW_*` variables, and the gateway listens on your host's loopback, not inside the container | Works. Needs OpenClaw on the same machine, see [docs/openclaw.md](docs/openclaw.md) |
+| **D. IDE agent over MCP** | Works with two extras on the host: run `pnpm install` and `pnpm build` (the IDE starts the MCP server from `apps/mcp/dist/index.js` on your machine, not in Docker), and set `SENTINEL_AGENT_TOKEN` in `.env` (`pnpm run setup`). The containerised API is published on `127.0.0.1:4000`, which is where the MCP server looks | Works. This is the path the IDE clients were verified on |
+| URL mode, browser check | HTTP checks work. `browser_check` reports "unavailable" (no Chromium in the image) | HTTP checks work. `browser_check` works if you install Chromium |
+
+In short: **Docker alone gives you A and B.** For C you need local development, and D needs a local build of the MCP server in either option.
+
+
 ### Option 1: Docker, one command
 
 ```bash
@@ -381,6 +396,16 @@ docker compose up --build
 ```
 
 Starts PostgreSQL, the API (applies migrations and seeds the demo data on every start) and the web UI. Open <http://localhost:3000>. The API answers on <http://localhost:4000/api/health>.
+
+To use the **AI agent** (B) in Docker, create `.env` first and add a key; to use an **IDE agent** (D), `.env` must also hold the agent token:
+
+```bash
+pnpm run setup                       # creates .env with SENTINEL_AGENT_TOKEN
+# edit .env: LLM_PROVIDER=gemini and GEMINI_API_KEY=<your key>   (optional, for way B)
+docker compose up --build
+```
+
+Changed `.env` after the containers started? Recreate the API so it re-reads it: `docker compose up -d --force-recreate api`.
 
 Container limits: the image has no Chromium, so `browser_check` reports "unavailable"; the Agent API is off unless `SENTINEL_AGENT_TOKEN` is set (run `pnpm run setup` first and Compose picks it up from `.env`); the images are large, about 1.4 to 1.5 GB each.
 
@@ -396,6 +421,29 @@ pnpm dev                   # API on :4000, web on :3000
 ```
 
 `pnpm build` builds every package, including the MCP server at `apps/mcp/dist/index.js` that IDE agents start. `pnpm run doctor` prints one line per check (build, `.env`, database, API, MCP handshake) with a fix hint. Use `pnpm run setup` and `pnpm run doctor`, never the bare `pnpm setup` or `pnpm doctor`.
+
+### Stopping and port conflicts
+
+| You started it with | Stop it with |
+| :--- | :--- |
+| `docker compose up --build` in a terminal | `Ctrl+C` in that terminal. To remove the containers as well: `docker compose down` |
+| `docker compose up -d ...` (detached) | `docker compose down` (add `-v` to also delete the database volume) |
+| `docker compose up -d db` only | `docker compose stop db` |
+| `pnpm dev` | `Ctrl+C` in the terminal that runs it |
+
+**`Error: ports are not available ... 127.0.0.1:4000`** means something already listens on that port, usually a leftover `pnpm dev` (API on 4000, web on 3000). Stop it first, or move Docker to other host ports with `SENTINEL_API_PORT` and `SENTINEL_WEB_PORT`. Do not run `pnpm dev` and the Docker `api` and `web` services at the same time; the database container can be shared by both.
+
+Find what holds a port:
+
+```powershell
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 4000,3000 -State Listen | Select-Object LocalPort, OwningProcess
+```
+
+```bash
+# macOS and Linux
+lsof -i :4000 -i :3000
+```
 
 Optional extras: an LLM key ([docs/setup-keys.md](docs/setup-keys.md)), Chromium for browser checks (`pnpm --filter @campaign-sentinel/web exec playwright-core install chromium`), OpenClaw ([docs/openclaw.md](docs/openclaw.md)).
 
