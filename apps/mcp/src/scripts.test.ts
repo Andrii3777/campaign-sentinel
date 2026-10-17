@@ -179,16 +179,31 @@ describe("pnpm ide:antigravity formatting and safety", () => {
 });
 
 describe("pnpm doctor handshake and API lines", () => {
+  // a fake built server, so the result does not depend on whether `pnpm build` ran (CI checks a clean clone)
+  let built: string;
+  beforeEach(() => {
+    built = mkdtempSync(path.join(os.tmpdir(), "doctor-built-"));
+    mkdirSync(path.join(built, "apps/mcp/dist"), { recursive: true });
+    writeFileSync(path.join(built, "apps/mcp/dist/index.js"), "");
+  });
+  afterEach(() => rmSync(built, { recursive: true, force: true }));
+
   it("handshakeCheck fails when the server lists 14 tools", async () => {
     const { handshakeCheck } = await load("doctor.mjs");
-    const result = await handshakeCheck(repo, async () => ({ tools: 14, campaigns: 5 })).run();
+    const result = await handshakeCheck(built, async () => ({ tools: 14, campaigns: 5 })).run();
     expect(result.ok).toBe(false);
     expect(result.detail).toContain("14 tools");
   });
 
   it("handshakeCheck passes with 15 tools and a campaign", async () => {
     const { handshakeCheck } = await load("doctor.mjs");
-    expect((await handshakeCheck(repo, async () => ({ tools: 15, campaigns: 5 })).run()).ok).toBe(true);
+    expect((await handshakeCheck(built, async () => ({ tools: 15, campaigns: 5 })).run()).ok).toBe(true);
+  });
+
+  it("handshakeCheck reports an unbuilt server instead of running it", async () => {
+    const { handshakeCheck } = await load("doctor.mjs");
+    const result = await handshakeCheck(path.join(built, "missing"), async () => ({ tools: 15, campaigns: 5 })).run();
+    expect(result).toMatchObject({ ok: false, detail: "skipped: server not built" });
   });
 
   it("the API line shows host:port only, never userinfo", async () => {
