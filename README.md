@@ -433,6 +433,8 @@ pnpm dev                   # API on :4000, web on :3000
 
 **`Error: ports are not available ... 127.0.0.1:4000`** means something already listens on that port, usually a leftover `pnpm dev` (API on 4000, web on 3000). Stop it first, or move Docker to other host ports with `SENTINEL_API_PORT` and `SENTINEL_WEB_PORT`. Do not run `pnpm dev` and the Docker `api` and `web` services at the same time; the database container can be shared by both.
 
+If the port is held by a `pnpm dev` you cannot find a terminal for, killing only the process that listens is not enough: `node --watch` restarts it. Kill the whole tree instead, for example `taskkill /PID <parent pid> /T /F` on Windows.
+
 Find what holds a port:
 
 ```powershell
