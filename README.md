@@ -14,51 +14,26 @@ An AI agent that investigates why a marketing campaign's conversion rate changed
 | **Status** | A demonstration on synthetic data, not used in production ([details](#real-world-usage)) |
 | **License** | MIT |
 
+To launch it, go straight to [Running the project](#running-the-project): requirements, `.env`, start, a 5-minute check and how to stop, in that order.
+
 ## Table of Contents
 
-1. [Quick start](#quick-start)
-2. [Problem and scope](#problem-and-scope)
-3. [Demo scenarios](#demo-scenarios)
-4. [Ways to run the agent](#ways-to-run-the-agent)
+1. [Problem and scope](#problem-and-scope)
+2. [Demo scenarios](#demo-scenarios)
+3. [Ways to run the agent](#ways-to-run-the-agent)
+4. [Running the project](#running-the-project)
 5. [Running from your IDE](#running-from-your-ide)
 6. [Web UI](#web-ui)
 7. [Architecture](#architecture)
 8. [Tools and API](#tools-and-api)
 9. [Security model](#security-model)
 10. [Testing and verification](#testing-and-verification)
-11. [Configuration and local development](#configuration-and-local-development)
-12. [Trade-offs, limitations, next steps](#trade-offs-limitations-next-steps)
-13. [Real-world usage](#real-world-usage)
-14. [Answers to the assignment](#answers-to-the-assignment)
-15. [Repository layout and docs](#repository-layout-and-docs)
+11. [Trade-offs, limitations, next steps](#trade-offs-limitations-next-steps)
+12. [Real-world usage](#real-world-usage)
+13. [Answers to the assignment](#answers-to-the-assignment)
+14. [Repository layout and docs](#repository-layout-and-docs)
 
 ---
-
-## Quick start
-
-```bash
-docker compose up --build
-```
-
-This starts PostgreSQL, the API (it applies migrations and seeds the demo data on every start) and the web UI. Open <http://localhost:3000>; the API health check is at <http://localhost:4000/api/health>. Open the UI at `localhost`, not `127.0.0.1` or a LAN address: CORS allows only `WEB_ORIGIN` (`http://localhost:3000`).
-
-Then check the main scenario, about five minutes:
-
-1. Go to **Campaigns**, open *Home Insurance Quotes · Search*, keep the default question and the *Deterministic policy* runtime, press **Start investigation**.
-2. The timeline fills with persisted tool calls (about 8 calls in about 1.5 seconds). Expected result: verdict *Cause identified*, severity *high*, top hypothesis *Tracking*. Tracked CR fell from 4.19% to 1.84% while backend-confirmed conversions held; the pixel recorded 97% of backend conversions before a deploy at 2026-10-03 22:15 UTC and 42% after it.
-3. At the bottom, the *Ground truth check* compares the dataset's known cause with the agent's answer ("Match"). It is computed after the run and never given to the agent.
-4. Try two more: *Language Course Trial · Affiliate* ends *Inconclusive* and says which data is missing; *Meal Kit Subscription* shows a failed tool call and a capped confidence.
-5. On *URL check*, `http://127.0.0.1/` is refused with a plain message (private address); a public URL runs real HTTP checks.
-
-The same run from a terminal:
-
-```bash
-curl -s -X POST http://localhost:4000/api/investigations -H "content-type: application/json" \
-  -d '{"mode":"demo","campaignId":"home-insurance-search","runtime":"deterministic"}'
-# then: GET /api/investigations/<id>   (status COMPLETED, report, evidence, tool executions)
-```
-
-That path needs no `.env` and no key. To add a real LLM or an IDE agent, see [Ways to run the agent](#ways-to-run-the-agent). To run without Docker for the API and web, see [Local development](#local-development).
 
 ## Problem and scope
 
@@ -160,7 +135,6 @@ flowchart TB
 | Who pays for the model | Nobody, no model | Your key in `.env` | OpenClaw's own login or key | Your IDE subscription |
 | Started from | Web UI or REST | Web UI or REST | Web UI (OpenClaw option) or OpenClaw chat | The IDE chat |
 | Needs | Nothing | One LLM key in `.env` | OpenClaw installed and configured | `pnpm build`, API running, client config |
-| With Docker only | Works | Works, put the key in `.env` before `docker compose up` | Not supported (see C) | Works with a host `pnpm build` (see D) |
 | Same result every time | Yes | No | No | No |
 | Shown in the UI as | Deterministic, "No AI" | AI agent, provider and model | OpenClaw | External agent, MCP client name |
 
@@ -176,16 +150,8 @@ Setup: none. Choose **Deterministic policy** when you start an investigation.
 
 The API contains a small agent loop, without LangGraph or another framework ([ADR-0003](docs/adr/0003-single-agent-custom-loop.md)). A provider session sends the system prompt and the question to the model. The model answers with tool calls, the `Runner` executes them through `ToolExecutor` and returns all results of a turn together. This repeats until the model calls `submit_report` and the report passes validation.
 
-1. Put a key in `.env` (`pnpm run setup` creates the file):
-
-   ```env
-   LLM_PROVIDER=gemini          # anthropic (default) | openai | gemini
-   GEMINI_API_KEY=<your key>
-   GEMINI_MODEL=gemini-3.5-flash-lite
-   ```
-
-2. Restart the API, because it reads `.env` at start. With Docker: `docker compose up -d --force-recreate api`.
-3. Check `GET http://localhost:4000/api/health`: `runtimes.ai.status` must be `available`. The **AI agent** option in the UI becomes selectable.
+1. Set `LLM_PROVIDER` and that provider's key in `.env` ([step 2 of Running the project](#2-create-env-and-set-the-variables-you-need) has an example), then start or restart the API.
+2. Check `GET http://localhost:4000/api/health`: `runtimes.ai.status` must be `available`. The **AI agent** option in the UI becomes selectable.
 
 Only the selected provider's key is used. Per-provider variables and Gemini notes: [docs/setup-keys.md](docs/setup-keys.md). Loop limits: 16 model turns, 24 tool calls, 3 report attempts, 5 minutes, and 25 HTTP requests in URL mode.
 
@@ -197,7 +163,7 @@ OpenClaw is an external agent runtime, so here the API runs no loop. It creates 
 2. Run `pnpm build`, merge [integrations/openclaw/openclaw.sentinel.json5](integrations/openclaw/openclaw.sentinel.json5) into `~/.openclaw/openclaw.json` (set the absolute repository path and a gateway token), restart the gateway.
 3. Put `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN` and `OPENCLAW_AGENT_ID=sentinel` in `.env` and restart the API. `/api/health` then reports OpenClaw as configured.
 
-Docker Compose does not support this way: `docker-compose.yml` does not pass the `OPENCLAW_*` variables, and the gateway listens on the host's loopback, not inside the container. Use [local development](#local-development).
+Docker Compose does not support this way: `docker-compose.yml` does not pass the `OPENCLAW_*` variables, and the gateway listens on the host's loopback, not inside the container. Use [option 2, local development](#option-2-local-development).
 
 On the `claude-cli` backend OpenClaw can read local files through Claude Code's native `Read` tool, so use it for demo campaigns on a trusted machine only. Full steps, that caveat and what was verified: [docs/openclaw.md](docs/openclaw.md).
 
@@ -222,11 +188,172 @@ Agent API  /api/agent/*  ->  ToolExecutor + ReportService  ->  PostgreSQL
 | API address and token | The MCP server reads `SENTINEL_API_URL` and `SENTINEL_AGENT_TOKEN` from its process environment, then from the repository `.env`. That is why no config file contains a token |
 | The playbook the agent follows | The `investigate-campaign` skill in `.claude/skills/` and `.agents/skills/`, both generated from one source |
 
-Setup is the same for every IDE: follow [Local development](#local-development) (it includes `pnpm build` and the agent token), keep the API running on :4000, and run `pnpm run doctor` to check the build, `.env`, database, API and a real MCP handshake.
-
-With Docker instead of `pnpm dev`, two things are still needed on the host: `pnpm install && pnpm build` (the IDE starts the MCP server from `apps/mcp/dist/index.js` on your machine, not in a container), and `pnpm run setup` before `docker compose up` so `.env` holds `SENTINEL_AGENT_TOKEN`. The containerised API is published on `127.0.0.1:4000`, which is where the MCP server looks.
+Setup is the same for every IDE: start the project as in [Running the project](#running-the-project) so that `.env` holds `SENTINEL_AGENT_TOKEN`, `apps/mcp/dist/index.js` is built and the API answers on :4000, then run `pnpm run doctor` to check the build, `.env`, database, API and a real MCP handshake. With Docker the IDE still starts the MCP server from your local build, not from a container, so run `pnpm install && pnpm build` on the host; the containerised API is published on `127.0.0.1:4000`, which is where the MCP server looks.
 
 Then do the one-time client step below and ask: *"Investigate the demo campaign `home-insurance-search`."* The run appears in the web UI with source `mcp`, runtime `external` and the client's name.
+
+## Running the project
+
+Everything about launching is in this section, in the order you need it: requirements, `.env`, start, check, stop.
+
+### 1. Requirements
+
+- **Docker** (Docker Desktop on Windows and macOS), always: it runs PostgreSQL, and in option 1 also the API and web UI.
+- **Node 22.18+ and pnpm 10** for local development (option 2) and for way D, because the IDE starts the MCP server from a local build. Docker-only runs of ways A and B need only Node, for the setup script.
+
+### 2. Create `.env` and set the variables you need
+
+```bash
+node scripts/setup.mjs     # same as `pnpm run setup`: creates .env from .env.example and generates SENTINEL_AGENT_TOKEN; safe to rerun
+```
+
+`.env.example` lists every variable, but most keep their defaults or stay empty. The main path (deterministic runs, URL checks, the UI, every test) works with no changes. Set only what your goal needs:
+
+| Your goal | Variables to set | Leave empty |
+| :--- | :--- | :--- |
+| See the project work (way A, URL checks, UI, tests) | None | Everything else |
+| Use the built-in LLM agent (way B) | `LLM_PROVIDER` and that provider's key, optionally its model | The other providers' keys, `OPENCLAW_*` |
+| Drive it from an IDE agent (way D) | `SENTINEL_AGENT_TOKEN`, already generated by the setup script | LLM keys, `OPENCLAW_*` |
+| Use OpenClaw (way C) | `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID` | LLM keys |
+| Change ports or addresses | `API_PORT`, `API_HOST`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`, `API_INTERNAL_URL` (or the Compose host ports) | Everything else |
+
+For example, for way B with Gemini:
+
+```env
+LLM_PROVIDER=gemini          # anthropic (default) | openai | gemini
+GEMINI_API_KEY=<your key>
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+The API reads `.env` once at start. If you change it later, restart the API: `docker compose up -d --force-recreate api` in Docker, or stop and start `pnpm dev`.
+
+`.env` is git-ignored; never commit it or print it. Any agent with file tools in this folder can read it, so use a dedicated, spend-capped LLM key. The full schema is `apps/api/src/config/config.ts`; where each key goes and how to confirm it is picked up: [docs/setup-keys.md](docs/setup-keys.md).
+
+<details>
+<summary><b>All variables</b></summary>
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| **Database** | | |
+| `DATABASE_URL` | `postgresql://postgres@localhost:5433/campaign_sentinel` | Dev database used by the API and the seed |
+| `DATABASE_URL_TEST` | `postgresql://postgres@localhost:5433/campaign_sentinel_test` | Database used by `pnpm test:int` |
+| **API and web** | | |
+| `API_PORT` | `4000` | API port |
+| `API_HOST` | `127.0.0.1` | Listen address. The public API has no login, so keep it on loopback (the compose service sets `0.0.0.0` inside the container and publishes to `127.0.0.1` only) |
+| `WEB_ORIGIN` | `http://localhost:3000` | Browser origin allowed by CORS |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | API address used by the browser |
+| `API_INTERNAL_URL` | `http://localhost:4000` | API address used by the Next.js server |
+| **Agent API and MCP** | | |
+| `SENTINEL_AGENT_TOKEN` | generated by `pnpm run setup` | Bearer token (32+ characters) for `/api/agent/*`. Without it the Agent API answers 401 and IDE agents cannot start runs |
+| `SENTINEL_API_URL` | empty | Where the MCP server finds the API. Empty means `API_INTERNAL_URL`. Loopback only |
+| `SENTINEL_ALLOW_REMOTE_API` | empty | Set to `1` to let the MCP server talk to a non-loopback API (the token is sent there) |
+| **Built-in AI agent (way B)** | | |
+| `LLM_PROVIDER` | `anthropic` | `anthropic`, `openai` or `gemini` |
+| `ANTHROPIC_API_KEY` | empty | Anthropic key |
+| `ANTHROPIC_MODEL` | `claude-opus-5-5` | Anthropic model id |
+| `ANTHROPIC_EFFORT` | `medium` | Reasoning effort |
+| `OPENAI_API_KEY` | empty | OpenAI key |
+| `OPENAI_MODEL` | empty (built-in default) | OpenAI model id |
+| `GEMINI_API_KEY` | empty | Gemini key |
+| `GEMINI_MODEL` | empty (built-in default) | Gemini model id |
+| **OpenClaw (way C)** | | |
+| `OPENCLAW_GATEWAY_URL` | empty | Gateway address, for example `http://127.0.0.1:18789` |
+| `OPENCLAW_GATEWAY_TOKEN` | empty | Gateway token |
+| `OPENCLAW_AGENT_ID` | `sentinel` | OpenClaw agent used for runs |
+| **URL mode** | | |
+| `BROWSER_CHECKS` | `auto` | `auto` uses Chromium if installed; `off` disables the browser check |
+| `URL_FETCH_ALLOW_PRIVATE` | empty | Test-only switch that lets URL tools reach loopback. The API refuses to start with it when `NODE_ENV=production` |
+| **Docker Compose only** | | |
+| `SENTINEL_DB_PORT` / `SENTINEL_API_PORT` / `SENTINEL_WEB_PORT` | `5433` / `4000` / `3000` | Host ports |
+| **Scripts** | | |
+| `UI_BASE_URL`, `UI_API_URL` | local addresses | Targets of the browser smoke test |
+| `DATABASE_URL_EXAMPLES` | empty | Database used by `scripts/examples.mjs` |
+
+</details>
+
+### 3. Start it: Docker or local
+
+Pick one of two options. They support the ways to run the agent like this:
+
+| | Option 1: Docker | Option 2: local development |
+| :--- | :--- | :--- |
+| A. Deterministic | Works | Works |
+| B. AI agent (your LLM key) | Works; set the key in `.env` before `docker compose up` | Works |
+| C. OpenClaw | Not supported: Compose does not pass `OPENCLAW_*`, and the gateway listens on the host's loopback | Works, see [docs/openclaw.md](docs/openclaw.md) |
+| D. IDE agent over MCP | Works after `pnpm install && pnpm build` on the host | Works; the IDE clients were verified this way |
+| URL `browser_check` | Reports "unavailable" (no Chromium in the image) | Works once Chromium is installed |
+
+#### Option 1: Docker
+
+```bash
+docker compose up --build
+```
+
+This starts PostgreSQL, the API (it applies migrations and seeds the demo data on every start) and the web UI. Open <http://localhost:3000>; the API health check is at <http://localhost:4000/api/health>. Use `localhost`, not `127.0.0.1` or a LAN address: CORS allows only `WEB_ORIGIN` (`http://localhost:3000`). The images are large, about 1.4 to 1.5 GB each.
+
+#### Option 2: Local development
+
+```bash
+pnpm install
+docker compose up -d db    # PostgreSQL on 127.0.0.1:5433 (only the db service)
+pnpm db:migrate
+pnpm db:seed               # synthetic demo data
+pnpm build                 # every package, including the MCP server at apps/mcp/dist/index.js
+pnpm dev                   # API on :4000, web on :3000
+pnpm run doctor            # one line per check (build, .env, database, API, MCP handshake), with a fix hint
+```
+
+Always type `pnpm run setup` and `pnpm run doctor`. Bare `pnpm setup` is pnpm's own command and edits your PATH; bare `pnpm doctor` is a pnpm builtin that does nothing here.
+
+Optional: Chromium for browser checks (`pnpm --filter @campaign-sentinel/web exec playwright-core install chromium`), OpenClaw ([docs/openclaw.md](docs/openclaw.md)).
+
+### 4. Check the main scenario (5 minutes)
+
+1. Open <http://localhost:3000>, go to **Campaigns**, open *Home Insurance Quotes · Search*, keep the default question and the *Deterministic policy* runtime, press **Start investigation**.
+2. The timeline fills with persisted tool calls (about 8 calls in about 1.5 seconds). Expected result: verdict *Cause identified*, severity *high*, top hypothesis *Tracking*. Tracked CR fell from 4.19% to 1.84% while backend-confirmed conversions held; the pixel recorded 97% of backend conversions before a deploy at 2026-10-03 22:15 UTC and 42% after it.
+3. At the bottom, the *Ground truth check* compares the dataset's known cause with the agent's answer ("Match"). It is computed after the run and never given to the agent.
+4. Try two more: *Language Course Trial · Affiliate* ends *Inconclusive* and says which data is missing; *Meal Kit Subscription* shows a failed tool call and a capped confidence.
+5. On *URL check*, `http://127.0.0.1/` is refused with a plain message (private address); a public URL runs real HTTP checks.
+
+The same run from a terminal:
+
+```bash
+curl -s -X POST http://localhost:4000/api/investigations -H "content-type: application/json" \
+  -d '{"mode":"demo","campaignId":"home-insurance-search","runtime":"deterministic"}'
+# then: GET /api/investigations/<id>   (status COMPLETED, report, evidence, tool executions)
+```
+
+### 5. Stopping and port conflicts
+
+| You started it with | Stop it with |
+| :--- | :--- |
+| `docker compose up --build` in a terminal | `Ctrl+C` in that terminal; `docker compose down` also removes the containers |
+| `docker compose up -d ...` (detached) | `docker compose down` (add `-v` to also delete the database volume) |
+| `docker compose up -d db` only | `docker compose stop db` |
+| `pnpm dev` | `Ctrl+C` in the terminal that runs it |
+
+Do not run `pnpm dev` and the Docker `api` and `web` services at the same time; both can share the database container.
+
+<details>
+<summary><b><code>Error: ports are not available ... 127.0.0.1:4000</code></b></summary>
+
+Something already listens on that port, usually a leftover `pnpm dev` (API on 4000, web on 3000). Stop it first, or move Docker to other host ports with `SENTINEL_API_PORT` and `SENTINEL_WEB_PORT`.
+
+If the port belongs to a `pnpm dev` whose terminal you cannot find, killing only the listening process is not enough, because `node --watch` restarts it. Kill the whole tree, for example `taskkill /PID <parent pid> /T /F` on Windows.
+
+Find what holds a port:
+
+```powershell
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 4000,3000 -State Listen | Select-Object LocalPort, OwningProcess
+```
+
+```bash
+# macOS and Linux
+lsof -i :4000 -i :3000
+```
+
+</details>
 
 ## Running from your IDE
 
@@ -456,7 +583,7 @@ Not covered: there is no user authentication, the Agent API token is one shared 
 
 All tests run offline and without keys. The model is replaced by the deterministic policy or a scripted session, the internet by a local fixture site, the provider SDKs by a fake HTTP transport. The end-to-end tests run each demo scenario through the real application over HTTP and assert the persisted events, evidence, report and ground truth. Strategy and the limits of the doubles: [ADR-0009](docs/adr/0009-test-strategy-and-doubles.md).
 
-Manual scenarios: the [quick start](#quick-start) check, the five demo campaigns, a URL check, and a run from at least one IDE client. What was run, when, and with which run ids: [docs/verification.md](docs/verification.md).
+Manual scenarios: the [5-minute check](#4-check-the-main-scenario-5-minutes), the five demo campaigns, a URL check, and a run from at least one IDE client. What was run, when, and with which run ids: [docs/verification.md](docs/verification.md).
 
 ### Example input and output
 
@@ -504,117 +631,6 @@ The same data as [docs/verification.json](docs/verification.json), which the UI'
 | GitHub Actions CI | **verified** | `pnpm check` and `pnpm test:int` green on GitHub on 2026-10-17 (run 39077152365) |
 
 One run per client proves the integration path, not reasoning quality in general.
-
----
-
-## Configuration and local development
-
-### Local development
-
-Requirements: Node 22.18+, pnpm 10, Docker (for the database).
-
-```bash
-pnpm install
-pnpm run setup             # .env from .env.example with a random SENTINEL_AGENT_TOKEN
-docker compose up -d db    # PostgreSQL on 127.0.0.1:5433 (only the db service)
-pnpm db:migrate
-pnpm db:seed               # synthetic demo data
-pnpm build                 # every package, including the MCP server at apps/mcp/dist/index.js
-pnpm dev                   # API on :4000, web on :3000
-pnpm run doctor            # one line per check (build, .env, database, API, MCP handshake), with a fix hint
-```
-
-Always type `pnpm run setup` and `pnpm run doctor`. Bare `pnpm setup` is pnpm's own command and edits your PATH; bare `pnpm doctor` is a pnpm builtin that does nothing here.
-
-Optional extras: an LLM key ([docs/setup-keys.md](docs/setup-keys.md)), Chromium for browser checks (`pnpm --filter @campaign-sentinel/web exec playwright-core install chromium`), OpenClaw ([docs/openclaw.md](docs/openclaw.md)).
-
-Docker alone gives ways A and B. Way C needs local development, and way D needs a local `pnpm build` of the MCP server either way. The Docker image has no Chromium, so `browser_check` reports "unavailable" there; locally it works once Chromium is installed. The images are large, about 1.4 to 1.5 GB each. Changed `.env` after the containers started? Recreate the API: `docker compose up -d --force-recreate api`.
-
-### Environment variables
-
-Nothing is required for the main path: deterministic runs, URL checks, the UI and every test work with an empty `.env`. `.env.example` lists every variable, but most keep their defaults or stay empty. Set only what your goal needs:
-
-| Your goal | Variables to set | Leave empty |
-| :--- | :--- | :--- |
-| See the project work (deterministic runs, URL checks, UI, tests) | None. `pnpm run setup` is enough, or run Docker without a `.env` | Everything else |
-| Use the built-in LLM agent (way B) | `LLM_PROVIDER` and that provider's key, optionally its model | The other providers' keys, `OPENCLAW_*` |
-| Drive it from an IDE agent (way D) | `SENTINEL_AGENT_TOKEN` (`pnpm run setup` generates it) | LLM keys, `OPENCLAW_*` |
-| Use OpenClaw (way C) | `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID` | LLM keys |
-| Change ports or addresses | `API_PORT`, `API_HOST`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`, `API_INTERNAL_URL` (or the Compose host ports) | Everything else |
-
-`.env` is git-ignored; never commit it or print it. The full schema is `apps/api/src/config/config.ts`. Where each key goes and how to confirm it is picked up: [docs/setup-keys.md](docs/setup-keys.md).
-
-<details>
-<summary><b>All variables</b></summary>
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| **Database** | | |
-| `DATABASE_URL` | `postgresql://postgres@localhost:5433/campaign_sentinel` | Dev database used by the API and the seed |
-| `DATABASE_URL_TEST` | `postgresql://postgres@localhost:5433/campaign_sentinel_test` | Database used by `pnpm test:int` |
-| **API and web** | | |
-| `API_PORT` | `4000` | API port |
-| `API_HOST` | `127.0.0.1` | Listen address. The public API has no login, so keep it on loopback (the compose service sets `0.0.0.0` inside the container and publishes to `127.0.0.1` only) |
-| `WEB_ORIGIN` | `http://localhost:3000` | Browser origin allowed by CORS |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:4000` | API address used by the browser |
-| `API_INTERNAL_URL` | `http://localhost:4000` | API address used by the Next.js server |
-| **Agent API and MCP** | | |
-| `SENTINEL_AGENT_TOKEN` | generated by `pnpm run setup` | Bearer token (32+ characters) for `/api/agent/*`. Without it the Agent API answers 401 and IDE agents cannot start runs |
-| `SENTINEL_API_URL` | empty | Where the MCP server finds the API. Empty means `API_INTERNAL_URL`. Loopback only |
-| `SENTINEL_ALLOW_REMOTE_API` | empty | Set to `1` to let the MCP server talk to a non-loopback API (the token is sent there) |
-| **Built-in AI agent (way B)** | | |
-| `LLM_PROVIDER` | `anthropic` | `anthropic`, `openai` or `gemini` |
-| `ANTHROPIC_API_KEY` | empty | Anthropic key |
-| `ANTHROPIC_MODEL` | `claude-opus-5-5` | Anthropic model id |
-| `ANTHROPIC_EFFORT` | `medium` | Reasoning effort |
-| `OPENAI_API_KEY` | empty | OpenAI key |
-| `OPENAI_MODEL` | empty (built-in default) | OpenAI model id |
-| `GEMINI_API_KEY` | empty | Gemini key |
-| `GEMINI_MODEL` | empty (built-in default) | Gemini model id |
-| **OpenClaw (way C)** | | |
-| `OPENCLAW_GATEWAY_URL` | empty | Gateway address, for example `http://127.0.0.1:18789` |
-| `OPENCLAW_GATEWAY_TOKEN` | empty | Gateway token |
-| `OPENCLAW_AGENT_ID` | `sentinel` | OpenClaw agent used for runs |
-| **URL mode** | | |
-| `BROWSER_CHECKS` | `auto` | `auto` uses Chromium if installed; `off` disables the browser check |
-| `URL_FETCH_ALLOW_PRIVATE` | empty | Test-only switch that lets URL tools reach loopback. The API refuses to start with it when `NODE_ENV=production` |
-| **Docker Compose only** | | |
-| `SENTINEL_DB_PORT` / `SENTINEL_API_PORT` / `SENTINEL_WEB_PORT` | `5433` / `4000` / `3000` | Host ports |
-| **Scripts** | | |
-| `UI_BASE_URL`, `UI_API_URL` | local addresses | Targets of the browser smoke test |
-| `DATABASE_URL_EXAMPLES` | empty | Database used by `scripts/examples.mjs` |
-
-</details>
-
-### Stopping and port conflicts
-
-| You started it with | Stop it with |
-| :--- | :--- |
-| `docker compose up --build` in a terminal | `Ctrl+C` in that terminal; `docker compose down` also removes the containers |
-| `docker compose up -d ...` (detached) | `docker compose down` (add `-v` to also delete the database volume) |
-| `docker compose up -d db` only | `docker compose stop db` |
-| `pnpm dev` | `Ctrl+C` in the terminal that runs it |
-
-<details>
-<summary><b><code>Error: ports are not available ... 127.0.0.1:4000</code></b></summary>
-
-Something already listens on that port, usually a leftover `pnpm dev` (API on 4000, web on 3000). Stop it first, or move Docker to other host ports with `SENTINEL_API_PORT` and `SENTINEL_WEB_PORT`. Do not run `pnpm dev` and the Docker `api` and `web` services at the same time; both can share the database container.
-
-If the port belongs to a `pnpm dev` whose terminal you cannot find, killing only the listening process is not enough, because `node --watch` restarts it. Kill the whole tree, for example `taskkill /PID <parent pid> /T /F` on Windows.
-
-Find what holds a port:
-
-```powershell
-# Windows PowerShell
-Get-NetTCPConnection -LocalPort 4000,3000 -State Listen | Select-Object LocalPort, OwningProcess
-```
-
-```bash
-# macOS and Linux
-lsof -i :4000 -i :3000
-```
-
-</details>
 
 ## Trade-offs, limitations, next steps
 
@@ -676,8 +692,8 @@ Each item of the assignment brief and where it is met.
 | What the agent does (scope and non-scope) | [What the agent does](#what-the-agent-does), [What it does not do](#what-it-does-not-do) |
 | Business cases covered | [Demo scenarios](#demo-scenarios) |
 | Architecture overview (components and data flow) | [Ways to run the agent](#ways-to-run-the-agent), [Architecture](#architecture), [docs/walkthrough.md](docs/walkthrough.md) |
-| Setup instructions (local run) | [Quick start](#quick-start), [Configuration and local development](#configuration-and-local-development) |
-| How to test and verify (unit, integration, manual scenarios) | [Testing and verification](#testing-and-verification), [Quick start](#quick-start) |
+| Setup instructions (local run) | [Running the project](#running-the-project) |
+| How to test and verify (unit, integration, manual scenarios) | [Testing and verification](#testing-and-verification), [5-minute check](#4-check-the-main-scenario-5-minutes) |
 | Example inputs and outputs (screenshots and logs) | [Example input and output](#example-input-and-output), [docs/examples/](docs/examples/), screenshots throughout |
 | Trade-offs, limitations, next steps | [Trade-offs, limitations, next steps](#trade-offs-limitations-next-steps) |
 | Is it used in a real business today | [Real-world usage](#real-world-usage): not in production, three realistic users, what production needs |
@@ -703,7 +719,7 @@ Each item of the assignment brief and where it is met.
 | Agent design quality: planning, tool use, state management, prompt hygiene | Versioned prompt parts with no user data, tool outputs as untrusted data, state in the ledger ([ADR-0003](docs/adr/0003-single-agent-custom-loop.md), [ADR-0006](docs/adr/0006-evidence-ledger-and-report-grounding.md)) |
 | Engineering quality: structure, typing, tests, readability, skills, prompt-injection security | Monorepo with enforced boundaries, zod contracts, the `investigate-campaign` skill generated from one playbook, the `landing-page-mobile` scenario with a hidden injection and a scripted "compromised model" test |
 | Reliability: edge cases, deterministic checks, validation | Deterministic statistics and tools, grounding validation, the `insufficient-data` and `tool-failure` scenarios |
-| Clarity: README and instructions, easy to run and verify | This README, `pnpm run doctor`, the [quick start](#quick-start) check |
+| Clarity: README and instructions, easy to run and verify | This README, `pnpm run doctor`, the [5-minute check](#4-check-the-main-scenario-5-minutes) |
 | Practicality: could a small team extend this into production | [Real-world usage](#real-world-usage), [next steps](#trade-offs-limitations-next-steps), `CampaignDataRepository` as the seam for real data |
 
 ### Submission
