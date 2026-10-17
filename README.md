@@ -331,6 +331,18 @@ Nothing here is required to run the main path: the deterministic runtime, the UR
 pnpm run setup        # never bare `pnpm setup`: that is pnpm's own command and edits your PATH
 ```
 
+**You do not need to fill in all of them.** `.env.example` lists every variable, but most keep their defaults or stay empty. Set only what your goal needs:
+
+| Your goal | Variables to set | Leave empty |
+| :--- | :--- | :--- |
+| See the project work (deterministic runs, URL checks, UI, tests) | None. `pnpm run setup` is enough, or run Docker without a `.env` | Everything else |
+| Use a built-in LLM agent (way B) | `LLM_PROVIDER` and that provider's key, optionally its model | The other providers' keys, `OPENCLAW_*` |
+| Drive it from an IDE agent (way D) | `SENTINEL_AGENT_TOKEN` (`pnpm run setup` generates it) | LLM keys, `OPENCLAW_*` |
+| Use OpenClaw (way C) | `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID` | LLM keys |
+| Change ports or addresses | `API_PORT`, `API_HOST`, `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`, `API_INTERNAL_URL` (or the Compose host ports) | Everything else |
+
+The tables below list every variable for reference.
+
 | Variable | Default | Description |
 | :--- | :--- | :--- |
 | **Database** | | |
