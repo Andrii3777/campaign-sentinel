@@ -1,6 +1,6 @@
 # Campaign Sentinel
 
-An AI agent that investigates **why a marketing campaign's conversion rate changed** and writes an evidence-based report. Every claim in the report points to a numbered piece of evidence recorded by a tool.
+An AI agent that investigates why a marketing campaign's conversion rate changed and writes an evidence-based report. Every claim in the report points to a numbered piece of evidence recorded by a tool.
 
 <p align="center">
   <img src="docs/assets/screens/01-overview.png" alt="Campaign Sentinel overview page" width="100%" />
@@ -45,10 +45,10 @@ This starts PostgreSQL, the API (it applies migrations and seeds the demo data o
 Then check the main scenario, about five minutes:
 
 1. Go to **Campaigns**, open *Home Insurance Quotes · Search*, keep the default question and the *Deterministic policy* runtime, press **Start investigation**.
-2. The timeline fills with real, persisted tool calls (about 8 calls in about 1.5 seconds). Expected result: verdict **Cause identified**, severity **high**, top hypothesis **Tracking**. Tracked CR fell from 4.19% to 1.84% while backend-confirmed conversions held; the pixel recorded 97% of backend conversions before a deploy at 2026-10-03 22:15 UTC and 42% after it.
-3. At the bottom, the **Ground truth check** compares the dataset's known cause with the agent's answer ("Match"). It is computed after the run and never given to the agent.
-4. Try two more: *Language Course Trial · Affiliate* ends **Inconclusive** and says which data is missing; *Meal Kit Subscription* shows a failed tool call and a capped confidence.
-5. **URL check**: `http://127.0.0.1/` is refused with a plain message (private address); a public URL runs real HTTP checks.
+2. The timeline fills with persisted tool calls (about 8 calls in about 1.5 seconds). Expected result: verdict *Cause identified*, severity *high*, top hypothesis *Tracking*. Tracked CR fell from 4.19% to 1.84% while backend-confirmed conversions held; the pixel recorded 97% of backend conversions before a deploy at 2026-10-03 22:15 UTC and 42% after it.
+3. At the bottom, the *Ground truth check* compares the dataset's known cause with the agent's answer ("Match"). It is computed after the run and never given to the agent.
+4. Try two more: *Language Course Trial · Affiliate* ends *Inconclusive* and says which data is missing; *Meal Kit Subscription* shows a failed tool call and a capped confidence.
+5. On *URL check*, `http://127.0.0.1/` is refused with a plain message (private address); a public URL runs real HTTP checks.
 
 The same run from a terminal:
 
@@ -82,7 +82,7 @@ I built production AI and full-stack systems at a previous company, but that wor
 
 - It is realistic. Every performance-marketing team has asked "is the drop real, or did tracking break?". The possible causes differ in kind (tracking, traffic mix, landing page, data quality, checkout), so the next check depends on what the previous one found. That is where an agent beats a fixed script.
 - It is checkable. The data is synthetic, generated from a fixed seed, and each demo campaign has a known hidden cause. Tests assert that the agent finds it, and a reviewer can reproduce that on a clean clone.
-- It is honest about limits. No real ad account is involved, so the project claims nothing about accuracy or business outcome. It shows how an agent is designed, constrained, observed and tested, not how good a model is at marketing.
+- It states its limits. No real ad account is involved, so the project claims nothing about accuracy or business outcome. It shows how an agent is designed, constrained, observed and tested, not how good a model is at marketing.
 
 Other candidates (fraud scoring, budget pacing, creative fatigue) and why they lost: [ADR-0001](docs/adr/0001-business-case-and-scope.md).
 
@@ -136,7 +136,7 @@ URL mode needs no seed: it fetches a live public page.
 
 ## Ways to run the agent
 
-There is one investigation engine and four ways to drive it. They differ only in **who decides which tool to call next**. All four use the same tools, the same report validation and the same database, so every run shows up in the same web UI.
+There is one investigation engine and four ways to drive it. They differ only in who decides which tool to call next. All four use the same tools, the same report validation and the same database, so every run shows up in the same web UI.
 
 ```mermaid
 flowchart TB
@@ -164,7 +164,7 @@ flowchart TB
 | Same result every time | Yes | No | No | No |
 | Shown in the UI as | Deterministic, "No AI" | AI agent, provider and model | OpenClaw | External agent, MCP client name |
 
-Want everything working with zero setup? Use **A**. Want the built-in agent on a real model? Use **B**. Already working in an AI coding tool? Use **D**. **C** is for people who already run OpenClaw. How much of each was actually tested: [Verified vs experimental](#verified-vs-experimental).
+Want everything working with zero setup? Use A. Want the built-in agent on a real model? Use B. Already working in an AI coding tool? Use D. C is for people who already run OpenClaw. How much of each was actually tested: [Verified vs experimental](#verified-vs-experimental).
 
 ### A. Deterministic policy
 
@@ -306,7 +306,7 @@ Antigravity running a URL-mode investigation of `https://example.com`, with `inv
 
 </details>
 
-**OpenClaw** is started from the web UI with the OpenClaw runtime option, not from an IDE chat; see [way C](#c-openclaw). Its runs appear in the Investigations list with the `OpenClaw` runtime.
+OpenClaw is started from the web UI with the OpenClaw runtime option, not from an IDE chat; see [way C](#c-openclaw). Its runs appear in the Investigations list with the `OpenClaw` runtime.
 
 Per-client details and what each run proved: [docs/integrations.md](docs/integrations.md).
 
@@ -528,7 +528,7 @@ Always type `pnpm run setup` and `pnpm run doctor`. Bare `pnpm setup` is pnpm's 
 
 Optional extras: an LLM key ([docs/setup-keys.md](docs/setup-keys.md)), Chromium for browser checks (`pnpm --filter @campaign-sentinel/web exec playwright-core install chromium`), OpenClaw ([docs/openclaw.md](docs/openclaw.md)).
 
-**Docker or local?** Docker alone gives ways A and B. Way C needs local development, and way D needs a local `pnpm build` of the MCP server either way. The Docker image has no Chromium, so `browser_check` reports "unavailable" there; locally it works once Chromium is installed. The images are large, about 1.4 to 1.5 GB each. Changed `.env` after the containers started? Recreate the API: `docker compose up -d --force-recreate api`.
+Docker alone gives ways A and B. Way C needs local development, and way D needs a local `pnpm build` of the MCP server either way. The Docker image has no Chromium, so `browser_check` reports "unavailable" there; locally it works once Chromium is installed. The images are large, about 1.4 to 1.5 GB each. Changed `.env` after the containers started? Recreate the API: `docker compose up -d --force-recreate api`.
 
 ### Environment variables
 
@@ -618,7 +618,7 @@ lsof -i :4000 -i :3000
 
 ## Trade-offs, limitations, next steps
 
-**Trade-offs**
+### Trade-offs
 
 - A custom loop instead of a framework: less magic, more edge cases to own ([ADR-0003](docs/adr/0003-single-agent-custom-loop.md)).
 - A deterministic twin of the agent: reproducible, but says nothing about model quality.
@@ -626,7 +626,7 @@ lsof -i :4000 -i :3000
 - Synthetic data: a checkable ground truth, but no real-world noise.
 - One shared ledger and boundary for every runtime: more moving parts.
 
-**Limitations**
+### Limitations
 
 - Real-model and IDE coverage is thin: one run per client or provider, and Anthropic and OpenAI never ran against real APIs. See [Verified vs experimental](#verified-vs-experimental).
 - No accuracy, speed or business-outcome claim is made. Numbers in the examples are properties of the synthetic dataset.
@@ -634,7 +634,7 @@ lsof -i :4000 -i :3000
 - The Docker images have no Chromium, are large and single-stage.
 - A very small p-value is stored rounded to 0, so one generated observation reads "p = 0"; read it as p < 0.001.
 
-**Next steps**
+### Next steps
 
 - Real connectors behind `CampaignDataRepository` (GA4, ad platforms).
 - An evaluation suite that runs the five scenarios against each real provider and tracks accuracy and cost.
@@ -647,13 +647,13 @@ lsof -i :4000 -i :3000
 
 **Is this solution used in any business today? No, not in production.** It is a demonstration built for this assignment on synthetic data. Nothing here describes a real deployment, a real customer or a measured business outcome.
 
-**Realistic users**
+### Realistic users
 
-1. **A performance-marketing agency** with many client accounts. When a client's conversion rate drops, it gets a first-pass answer (tracking, a source, the page, or too little data?) before an analyst spends an hour on it.
-2. **An affiliate network or publisher-operations team.** Traffic quality and postback or tracking problems are daily work, and a drop has to be split quickly into "a partner sent bad traffic" and "our tracking broke".
-3. **An in-house growth team** at a lead-generation or subscription business, where the people who ship landing-page and tracking releases are the ones who must find out which release broke what.
+1. A performance-marketing agency with many client accounts. When a client's conversion rate drops, it gets a first-pass answer (tracking, a source, the page, or too little data?) before an analyst spends an hour on it.
+2. An affiliate network or publisher-operations team. Traffic quality and postback or tracking problems are daily work, and a drop has to be split quickly into "a partner sent bad traffic" and "our tracking broke".
+3. An in-house growth team at a lead-generation or subscription business, where the people who ship landing-page and tracking releases are the ones who must find out which release broke what.
 
-**What production would require**
+### What production would require
 
 | Area | Needed |
 | :--- | :--- |
@@ -668,7 +668,7 @@ lsof -i :4000 -i :3000
 
 Each item of the assignment brief and where it is met.
 
-**README content**
+### README content
 
 | Requirement | Where |
 | :--- | :--- |
@@ -682,7 +682,7 @@ Each item of the assignment brief and where it is met.
 | Trade-offs, limitations, next steps | [Trade-offs, limitations, next steps](#trade-offs-limitations-next-steps) |
 | Is it used in a real business today | [Real-world usage](#real-world-usage): not in production, three realistic users, what production needs |
 
-**Core requirement and minimum scope**
+### Core requirement and minimum scope
 
 | Requirement | Answer |
 | :--- | :--- |
@@ -695,7 +695,7 @@ Each item of the assignment brief and where it is met.
 | Observability: logs and traces of tool calls and a final decision summary | Ledger events, tool executions and evidence in PostgreSQL, shown live in the UI and through `GET /api/investigations/:id` and `/events` |
 | Tests: basic unit tests and at least one integration or e2e test | [Testing and verification](#testing-and-verification): unit tests per package, integration and end-to-end tests over HTTP, a browser smoke test |
 
-**Evaluation criteria**
+### Evaluation criteria
 
 | Criterion | Where |
 | :--- | :--- |
@@ -706,7 +706,7 @@ Each item of the assignment brief and where it is met.
 | Clarity: README and instructions, easy to run and verify | This README, `pnpm run doctor`, the [quick start](#quick-start) check |
 | Practicality: could a small team extend this into production | [Real-world usage](#real-world-usage), [next steps](#trade-offs-limitations-next-steps), `CampaignDataRepository` as the seam for real data |
 
-**Submission**
+### Submission
 
 | Requirement | Where |
 | :--- | :--- |
