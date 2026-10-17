@@ -105,4 +105,4 @@ Names only (see `.env.example`; schema in `apps/api/src/config/config.ts`): `DAT
 - Unit: colocated `*.test.ts` (Vitest 5; run by `pnpm check` via each package's `test`). Integration/e2e: `*.int.test.ts` in `apps/api/src` and `apps/api/test`, run only by `pnpm test:int` against `DATABASE_URL_TEST` (migrations applied by `test/global-setup.ts`).
 - Seams: `ToolExecutor.execute`, `ReportService.submit`, `AgentSession` (use `ScriptedSession` + `toolTurn` from `runtime/scripted-session.ts`), whole HTTP API via `bootApp()` + supertest, `InMemoryCampaignDataRepository` for DB-free tests, `startFixtureSite()` for URL mode.
 - Web: unit tests in `apps/web/lib`/`components`; `pnpm test:ui` (`apps/web/e2e/smoke.mjs`) needs `pnpm dev` + seeded db + `pnpm --filter @campaign-sentinel/web exec playwright-core install chromium`.
-- CI (`.github/workflows/ci.yml`): `pnpm check` then `pnpm test:int`; not yet run on GitHub.
+- CI (`.github/workflows/ci.yml`): `pnpm check` then `pnpm test:int`; green on GitHub since run 39077152365 (2026-10-17).

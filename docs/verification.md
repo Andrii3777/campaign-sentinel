@@ -14,7 +14,7 @@ What was actually run, when, with which command and result. Everything below hap
 | Antigravity | **verified** | one manual demo run and two manual URL-mode runs in the Antigravity desktop app (details below) |
 | Cursor | **verified** | one manual demo run in the Cursor desktop app (details below) |
 | Docker one-command run | **verified once** | below |
-| GitHub Actions CI | **not yet run** | workflow `.github/workflows/ci.yml` written, never executed on GitHub |
+| GitHub Actions CI | **verified** | `.github/workflows/ci.yml` (`pnpm check`, `pnpm test:int`) green on GitHub on 2026-10-17, run 39077152365. The first run failed: two doctor handshake tests needed a local `apps/mcp` build, fixed in 2131a43 |
 
 ## Automated checks (the deterministic runtime; no AI)
 

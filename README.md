@@ -501,7 +501,7 @@ The same data as [docs/verification.json](docs/verification.json), which the UI'
 | OpenClaw | **verified once** | One real runtime run on Windows; chat and URL mode not run |
 | Docker one-command run | **verified** | See [docs/verification.md](docs/verification.md) |
 | Live URL tool | **manual** | Checked by hand against `https://example.com`; automated tests use a local fixture site |
-| GitHub Actions CI | **not yet run** | Workflow written; the same commands pass locally |
+| GitHub Actions CI | **verified** | `pnpm check` and `pnpm test:int` green on GitHub on 2026-10-17 (run 39077152365) |
 
 One run per client proves the integration path, not reasoning quality in general.
 
