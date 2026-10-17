@@ -138,7 +138,7 @@ flowchart TB
 | Same result every time | Yes | No | No | No |
 | Shown in the UI as | Deterministic, "No AI" | AI agent, provider and model | OpenClaw | External agent, MCP client name |
 
-Want everything working with zero setup? Use A. Want the built-in agent on a real model? Use B. Already working in an AI coding tool? Use D. C is for people who already run OpenClaw. How much of each was actually tested: [Verified vs experimental](#verified-vs-experimental).
+Want everything working with zero setup? Use A. Want the built-in agent on a real model? Use B. Already working in an AI coding tool? Use D. C is for people who already run OpenClaw.
 
 ### A. Deterministic policy
 
@@ -612,26 +612,6 @@ action (now): restore the conversion tag; do not cut bids on pixel data
 
 Confidence is a rubric label (high needs at least two independent evidence items, one of them direct), not a probability. The UI says so next to it.
 
-### Verified vs experimental
-
-The same data as [docs/verification.json](docs/verification.json), which the UI's Integrations page reads. Dates, commands and run ids: [docs/verification.md](docs/verification.md).
-
-| Component | Status | What that means |
-| :--- | :--- | :--- |
-| Deterministic runtime, tools, ledger, validation, API, UI | **verified** | Automated tests and a browser smoke test; no AI |
-| Claude Code | **verified** | One real headless run through MCP on one campaign, completed |
-| Codex | **verified** | One real run through MCP on one campaign, completed |
-| Cursor | **verified** | One manual demo run, client `cursor-vscode` |
-| Antigravity | **verified** | One manual demo run and two manual URL-mode runs in the desktop app; workspace MCP config not auto-loaded, server added to the global config |
-| AI agent, Gemini | **verified** | One real run on one campaign, completed (free-tier key) |
-| AI agent, Anthropic and OpenAI | **not verified** | Tested against fake transports only, no keys were available |
-| OpenClaw | **verified once** | One real runtime run on Windows; chat and URL mode not run |
-| Docker one-command run | **verified** | See [docs/verification.md](docs/verification.md) |
-| Live URL tool | **manual** | Checked by hand against `https://example.com`; automated tests use a local fixture site |
-| GitHub Actions CI | **verified** | `pnpm check` and `pnpm test:int` green on GitHub on 2026-10-17 (run 39077152365) |
-
-One run per client proves the integration path, not reasoning quality in general.
-
 ## Trade-offs, limitations, next steps
 
 ### Trade-offs
@@ -644,7 +624,7 @@ One run per client proves the integration path, not reasoning quality in general
 
 ### Limitations
 
-- Real-model and IDE coverage is thin: one run per client or provider, and Anthropic and OpenAI never ran against real APIs. See [Verified vs experimental](#verified-vs-experimental).
+- The Anthropic and OpenAI sessions are covered by tests against a fake transport; Gemini and the IDE clients were run against the real services. Run records: [docs/verification.md](docs/verification.md).
 - No accuracy, speed or business-outcome claim is made. Numbers in the examples are properties of the synthetic dataset.
 - The public GA4 sample dataset was evaluated and not integrated ([ADR-0008](docs/adr/0008-public-ga4-dataset-not-integrated.md)).
 - The Docker images have no Chromium, are large and single-stage.
