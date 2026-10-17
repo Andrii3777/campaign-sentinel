@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "campaign-sentinel": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/apps/mcp/dist/index.js"]
+    }
+  }
+}

@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+/* Direction contract seed 7e63678a — geological core log. Tokens only; components use the Tailwind names below. */
+:root {
+  --ground: #f3f4f2;
+  --surface: #ffffff;
+  --ink: #14191b;
+  --ink-2: #4a5558;
+  /* placeholders and hints: lighter than a typed value, 4.67:1 on white */
+  --ink-3: #6b7679;
+  --hairline: #d9ddda;
+  --rail: #1f2a2e;
+  --rail-raised: #2f3e43;
+  --rail-ink: #e6e9e7;
+  --rail-ink-2: #a9b4b2;
+
+  /* strata = tool kinds */
+  --stratum-metrics: #c9a227;
+  --stratum-tracking: #7a4e2d;
+  --stratum-http: #3e6a8a;
+  --stratum-context: #6f8f72;
+  --stratum-report: #d8c7a3;
+
+  /* states over the world — always paired with icon + text */
+  --state-failed: #b42318;
+  --state-degraded: #b54708;
+  --state-guardrail: #6941c6;
+  --state-ok: #067647;
+
+  /* reserved orange: the active layer and the primary action only */
+  --reserved: #c8551f;
+  /* same hue, darkened so white button text reaches 4.5:1 (#c8551f gives 4.4:1) */
+  --reserved-fill: #b54a1a;
+  --reserved-fill-hover: #9e3f14;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-rail: var(--rail);
+  --color-rail-raised: var(--rail-raised);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-ink-2: var(--rail-ink-2);
+  --color-stratum-metrics: var(--stratum-metrics);
+  --color-stratum-tracking: var(--stratum-tracking);
+  --color-stratum-http: var(--stratum-http);
+  --color-stratum-context: var(--stratum-context);
+  --color-stratum-report: var(--stratum-report);
+  --color-failed: var(--state-failed);
+  --color-degraded: var(--state-degraded);
+  --color-guardrail: var(--state-guardrail);
+  --color-ok: var(--state-ok);
+  --color-reserved: var(--reserved);
+  --color-reserved-fill: var(--reserved-fill);
+  --color-reserved-fill-hover: var(--reserved-fill-hover);
+
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --radius-sm: 4px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 20px;
+  --text-lg--line-height: 28px;
+  --text-xl: 28px;
+  --text-xl--line-height: 34px;
+}
+
+html {
+  background: var(--ground);
+  color: var(--ink);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  scrollbar-color: #b9c0bc var(--ground);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: #d8c7a3;
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--reserved);
+  outline-offset: 2px;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Core strip (signature move) ------------------------------------------------------------ */
+/* New layers extrude downward once, transform only; the origin is the top edge. */
+@keyframes extrude {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@layer components {
+.layer {
+  transform-origin: top;
+}
+.layer-fresh {
+  animation: extrude 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Failed call: stratum colour cut by a red fault hatch. Rejected: grey hatch, no stratum. */
+.layer-failed {
+  background-image: repeating-linear-gradient(135deg, var(--state-failed) 0 2px, transparent 2px 6px);
+}
+.layer-rejected {
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(135deg, #8b9598 0 2px, transparent 2px 6px);
+}
+.layer-active {
+  background-color: var(--reserved);
+}
+.layer-guardrail {
+  background-color: var(--state-guardrail);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* ---- Timeline: columns never move; mobile stacks the same cells ----------------------------- */
+.tl-row {
+  display: grid;
+  align-items: start;
+  column-gap: 12px;
+  row-gap: 2px;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "layer tool status"
+    ". reason reason"
+    ". time dur";
+}
+@media (min-width: 768px) {
+  .tl-row {
+    grid-template-columns: 12px 72px minmax(200px, 1fr) minmax(0, 1.6fr) 112px 64px;
+    grid-template-areas: "layer time tool reason status dur";
+  }
+}
+.tl-layer { grid-area: layer; }
+.tl-time { grid-area: time; }
+.tl-tool { grid-area: tool; }
+.tl-reason { grid-area: reason; }
+.tl-status { grid-area: status; }
+.tl-dur { grid-area: dur; }
+
+/* Highlight shared by strip layer, timeline row, evidence item and anchors that jump to them. */
+.hl {
+  transition: background-color 150ms ease;
+}
+.hl[data-active="true"],
+.hl:target {
+  background-color: #e8ece8;
+}
+:target {
+  scroll-margin-top: 16px;
+}
+}
+
+/* Browser surfaces in the palette */
+input[type="date"],
+textarea {
+  color-scheme: light;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #b9c0bc;
+  border: 2px solid var(--ground);
+  border-radius: 6px;
+}

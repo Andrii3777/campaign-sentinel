@@ -1,0 +1,20 @@
+# Keep the build context small and free of secrets: the images are built from source, never from a developer's .env or build output.
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/test-results
+**/playwright-report
+apps/api/src/generated
+.ai-radar
+.impeccable
+.claude
+.agents
+.cursor
+.codex
+docs/screenshots
+*.log

@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "1",
+  "verdict": "cause_identified",
+  "severity": "high",
+  "summary": "The tracked conversion rate went from 4.19% to 1.84% (−56.0%) between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16, but backend-confirmed conversions stayed stable: the pixel recorded 97% of backend conversions before and only 42% after, starting with the deploy change recorded at 2026-10-03 22:15 UTC (change #3). This is a tracking loss, not a loss of customers.",
+  "createdAt": "2026-10-17T16:49:39.623Z",
+  "payload": {
+    "model": "deterministic-policy-v1",
+    "runtime": "deterministic",
+    "summary": "The tracked conversion rate went from 4.19% to 1.84% (−56.0%) between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16, but backend-confirmed conversions stayed stable: the pixel recorded 97% of backend conversions before and only 42% after, starting with the deploy change recorded at 2026-10-03 22:15 UTC (change #3). This is a tracking loss, not a loss of customers.",
+    "verdict": "cause_identified",
+    "severity": "high",
+    "unknowns": [
+      {
+        "question": "Which page or template stopped sending the conversion event?",
+        "howToResolve": "Test the confirmation step with a tag debugger.",
+        "whyItMatters": "It is the fix target."
+      }
+    ],
+    "hypotheses": [
+      {
+        "id": "H1",
+        "status": "supported",
+        "category": "tracking",
+        "statement": "The conversion pixel stopped firing for most conversions after the deploy change recorded at 2026-10-03 22:15 UTC (change #3); real conversions did not drop.",
+        "confidence": "high",
+        "confidenceRationale": "A direct pixel/backend divergence and the trend agree; nothing contradicts it.",
+        "supportingEvidenceIds": [
+          "E8",
+          "E3",
+          "E12"
+        ],
+        "contradictingEvidenceIds": []
+      },
+      {
+        "id": "H2",
+        "status": "ruled_out",
+        "category": "traffic_source",
+        "statement": "One traffic source caused the drop.",
+        "confidence": "medium",
+        "confidenceRationale": "The cited evidence contradicts it.",
+        "supportingEvidenceIds": [],
+        "contradictingEvidenceIds": [
+          "E4",
+          "E5"
+        ]
+      },
+      {
+        "id": "H3",
+        "status": "ruled_out",
+        "category": "landing_page",
+        "statement": "One device (a broken landing page) caused the drop.",
+        "confidence": "medium",
+        "confidenceRationale": "The cited evidence contradicts it.",
+        "supportingEvidenceIds": [],
+        "contradictingEvidenceIds": [
+          "E6",
+          "E7"
+        ]
+      }
+    ],
+    "keyMetrics": {
+      "ci95": [
+        -0.027676,
+        -0.019254
+      ],
+      "pValue": 1e-16,
+      "current": {
+        "period": {
+          "end": "2026-10-16",
+          "start": "2026-10-03"
+        },
+        "sessions": 12656,
+        "conversions": 233,
+        "conversionRate": 0.01841
+      },
+      "baseline": {
+        "period": {
+          "end": "2026-10-02",
+          "start": "2026-09-19"
+        },
+        "sessions": 12585,
+        "conversions": 527,
+        "conversionRate": 0.041875
+      },
+      "isSignificant": true,
+      "absoluteChange": -0.023465,
+      "relativeChange": -0.5604,
+      "conversionsPerDayDifference": -21
+    },
+    "provenance": "synthetic-demo",
+    "limitations": [
+      "Produced by the deterministic policy (no AI): fixed rules and report templates applied to the tool results."
+    ],
+    "whatChanged": "Tracked CR 4.19% → 1.84% [E2]; the pixel lost most backend-confirmed conversions [E8].",
+    "observations": [
+      {
+        "statement": "Between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16 the tracked conversion rate went from 4.19% to 1.84% (−56.0%); the change is statistically significant (p < 0.001).",
+        "evidenceIds": [
+          "E2"
+        ]
+      },
+      {
+        "statement": "Daily conversion rate averaged 4.18% before 2026-10-04 and 1.67% from 2026-10-04 on (change point; 15 vs 13 days, −60.0%).",
+        "evidenceIds": [
+          "E3"
+        ]
+      },
+      {
+        "statement": "The pixel recorded 97% of backend-confirmed conversions in the baseline (527 of 543) but only 42% of backend-confirmed conversions in the current period (233 of 550).",
+        "evidenceIds": [
+          "E8"
+        ]
+      },
+      {
+        "statement": "Change #3 at 2026-10-03 22:15 UTC, category deploy, by web-team (text in untrusted content).",
+        "evidenceIds": [
+          "E12"
+        ]
+      }
+    ],
+    "toolFailures": [],
+    "evidenceIndex": {
+      "E1": "Baseline 2026-09-19…2026-10-02: 12,585 sessions, 527 tracked conversions, CR 4.19%, spend $31,363.3; current 2026-10-03…2026-10-16: 12,656 sessions, 233 tracked conversions, CR 1.84%, spend $31,709.82.",
+      "E2": "Tracked CR changed from 4.19% (527 / 12,585 sessions, 2026-09-19…2026-10-02) to 1.84% (233 / 12,656 sessions, 2026-10-03…2026-10-16): −2.35 pp (−56.0%); two-proportion z-test p < 0.001, 95% CI of the difference [−2.77 pp, −1.93 pp] — significant; −21.0 tracked conversions/day.",
+      "E3": "Daily conversion rate averaged 4.18% before 2026-10-04 and 1.67% from 2026-10-04 on (change point; 15 vs 13 days, −60.0%).",
+      "E4": "No source explains the CR change out of proportion to its traffic: the largest contributor, google_search, accounts for 69% of the −2.35 pp change with 70.2% of baseline sessions.",
+      "E5": "All 2 source segments changed CR by a similar relative amount (−57.3% to −55.5%); mix effect +0.00 pp, rate effect −2.35 pp.",
+      "E6": "No device explains the CR change out of proportion to its traffic: the largest contributor, mobile, accounts for 55% of the −2.35 pp change with 54.9% of baseline sessions.",
+      "E7": "All 2 device segments changed CR by a similar relative amount (−56.4% to −55.8%); mix effect −0.00 pp, rate effect −2.35 pp.",
+      "E8": "The pixel recorded 97% of backend-confirmed conversions in the baseline (527 of 543) but only 42% of backend-confirmed conversions in the current period (233 of 550).",
+      "E9": "Largest funnel step change: form_submit→lead_submitted 0.8378 → 0.3675 (−56.1%); other steps: page_view→form_start 0.1829 → 0.1825, form_start→form_submit 0.2788 → 0.28.",
+      "E10": "Change #1 at 2026-09-22 09:30 UTC, category budget, by ppc-manager (text in untrusted content).",
+      "E11": "Change #2 at 2026-09-30 14:00 UTC, category other, by ppc-manager (text in untrusted content).",
+      "E12": "Change #3 at 2026-10-03 22:15 UTC, category deploy, by web-team (text in untrusted content).",
+      "E13": "Change #4 at 2026-10-08 11:00 UTC, category traffic, by ppc-manager (text in untrusted content)."
+    },
+    "schemaVersion": "1",
+    "securityNotes": [],
+    "severityRationale": "Tracked conversions fell by −56.0% while real conversions held; bidding and reporting run on wrong data.",
+    "recommendedActions": [
+      {
+        "action": "Restore the conversion tag on the page changed at 2026-10-03 22:15 UTC and verify that it fires.",
+        "priority": "now",
+        "rationale": "The pixel misses most conversions.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      },
+      {
+        "action": "Do not cut bids or budgets on pixel data until tracking is fixed; judge performance on backend-confirmed conversions.",
+        "priority": "now",
+        "rationale": "Pixel data understates real conversions.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      },
+      {
+        "action": "Alert on the pixel-to-backend conversion ratio.",
+        "priority": "next",
+        "rationale": "Catches the next tracking break early.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      }
+    ],
+    "validationWarnings": []
+  }
+}

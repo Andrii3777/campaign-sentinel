@@ -1,0 +1,42 @@
+{
+  "name": "campaign-sentinel",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "postinstall": "pnpm --filter @campaign-sentinel/contracts build && pnpm --filter @campaign-sentinel/api db:generate",
+    "setup": "node scripts/setup.mjs",
+    "dev": "pnpm -r --parallel --if-present dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm --filter @campaign-sentinel/contracts build && pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "test:int": "pnpm --filter @campaign-sentinel/api test:int",
+    "db:migrate": "pnpm --filter @campaign-sentinel/api db:migrate",
+    "db:seed": "pnpm --filter @campaign-sentinel/api db:seed",
+    "db:reset": "pnpm --filter @campaign-sentinel/api db:reset",
+    "test:ui": "pnpm --filter @campaign-sentinel/web test:ui",
+    "skills:sync": "node scripts/skills-sync.mjs",
+    "verify:claude-code": "node scripts/verify/claude-code.mjs",
+    "verify:codex": "node scripts/verify/codex.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "ide:antigravity": "node scripts/ide-antigravity.mjs"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "eslint": "^10.13.0",
+    "@eslint/js": "^10.0.1",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.5",
+    "@types/node": "^26.6.5"
+  }
+}

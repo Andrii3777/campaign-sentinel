@@ -1,0 +1,18 @@
+.env
+.env.*
+!.env.example
+node_modules/
+__pycache__/
+.DS_Store
+dist/
+.next/
+coverage/
+test-results/
+playwright-report/
+
+# local development tooling, not part of the published project
+.ai-radar/
+.impeccable/
+PRODUCT.md
+CONTEXT.md
+_plans/

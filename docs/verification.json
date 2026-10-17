@@ -1,0 +1,51 @@
+[
+  {
+    "id": "deterministic",
+    "label": "Deterministic policy",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Automated tests (pnpm check, pnpm test:int) and the browser smoke test pnpm test:ui. No AI involved."
+  },
+  {
+    "id": "ai",
+    "label": "AI agent — Gemini verified; Anthropic and OpenAI not verified",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Gemini (gemini-3.5-flash-lite, free-tier key) ran once for real: run cmvcipil00000dsxfnzevlau5 on home-insurance-search COMPLETED in about 16 s (10 model turns, 8 tool calls), cause_identified / high, ground-truth check matched, report accepted on attempt 2 after the validator rejected the first format; one run, one campaign, free-tier quota. Anthropic and OpenAI sessions are not verified (no keys) and were tested only against fake transports."
+  },
+  {
+    "id": "openclaw",
+    "label": "OpenClaw",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "One real run through the OpenClaw runtime from the API (Windows, OpenClaw 2026.10.4, native local gateway on loopback, agent sentinel on the claude-cli backend with a Claude Code login, model pinned to Sonnet): run cmvctmr180005ngxfwoeanzp2 COMPLETED, likely_cause / high, ground truth matched (conversion_flow), 10 tool calls (3 retried after tool failures), first report rejected by the validator and the second accepted, model openclaw:sentinel, 146 s. Two earlier runs did not count: one interrupted by an API restart, one FAILED / NO_REPORT because the agent's ToolSearch call was denied by the exec policy; fixed by a per-agent exec override for sentinel (see openclaw.md). A follow-up probe showed the sentinel agent can still use Claude Code's native Read tool (read a file outside the workspace; no shell tool exposed), so use it for demo campaigns on a trusted machine only. Not verified: chat from OpenClaw's own UI, URL mode through OpenClaw, Write/Edit access, other versions or backends."
+  },
+  {
+    "id": "claude-code",
+    "label": "Claude Code",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Headless real run through the MCP server: Claude Code 2.1.296, --model claude-sonnet-5-5, run cmvccanab000090xfatyf1td7 COMPLETED, likely_cause / high, 3 tool calls, 1 report attempt, source mcp, runtime external, client name claude-code."
+  },
+  {
+    "id": "codex",
+    "label": "Codex",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Real run via npx -y @openai/codex@latest (Codex 0.163.0; the installed 0.132.0 was too old for the current default model), -s read-only -c windows.sandbox=\"unelevated\"; run cmvcd843e0000q0xf7ty9d0sa COMPLETED, cause_identified / high, 2 tool calls, 1 report attempt, client codex-mcp-client. A first attempt blocked on submit_report because of a wrong MCP annotation (openWorldHint), since fixed."
+  },
+  {
+    "id": "cursor",
+    "label": "Cursor",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Manual run in the Cursor desktop app (user-reported, checked against the stored run): run cmvco8d9x0000osxflqw9ktnm COMPLETED, client cursor-vscode v1.0.0, source mcp, runtime external, meal-kit-search-social, likely_cause / high, ground truth matched (conversion_flow). The server had to be enabled by hand under Settings -> MCP; Cursor does not start project MCP servers on its own. The agent reported that one tool (tracking health) failed twice and said so in the report."
+  },
+  {
+    "id": "antigravity",
+    "label": "Antigravity",
+    "status": "verified",
+    "checkedAt": "2026-10-17",
+    "evidence": "Manual run in the Antigravity desktop app: run cmvcftoot0001bgxfraof359i COMPLETED, client antigravity-client v1.0.0, 8 tool calls, report accepted on attempt 2 (attempt 1 rejected by the validator). The workspace MCP config was not auto-loaded; the server was added to the global config. Two more manual URL-mode runs against https://example.com (cmvcgtbfu0017kkxf27ewfzvb and cmvchdj2j0000c4xf9nok6t0m, source mcp, 6 HTTP requests, 1 report attempt each, likely_cause / medium, same as a deterministic URL run); the first had browser_check unavailable because of a stale failed Chromium probe in the API process (restart fixed it), the second loaded the page in Chromium."
+  }
+]

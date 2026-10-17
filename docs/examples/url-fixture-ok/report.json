@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1",
+  "verdict": "likely_cause",
+  "severity": "medium",
+  "summary": "The page answered 200 in 20 ms. 1 problem(s) were found; the most important: 1 same-site link(s) or form action(s) are broken.",
+  "createdAt": "2026-10-17T16:49:47.007Z",
+  "payload": {
+    "model": "deterministic-policy-v1",
+    "runtime": "deterministic",
+    "summary": "The page answered 200 in 20 ms. 1 problem(s) were found; the most important: 1 same-site link(s) or form action(s) are broken.",
+    "verdict": "likely_cause",
+    "severity": "medium",
+    "unknowns": [],
+    "hypotheses": [
+      {
+        "id": "H1",
+        "status": "supported",
+        "category": "site_content",
+        "statement": "1 same-site link(s) or form action(s) are broken.",
+        "confidence": "medium",
+        "confidenceRationale": "Measured directly on the live page; impact on conversions cannot be seen from a URL.",
+        "supportingEvidenceIds": [
+          "E5",
+          "E6"
+        ],
+        "contradictingEvidenceIds": []
+      }
+    ],
+    "keyMetrics": {
+      "bytes": 1360,
+      "status": 200,
+      "ttfbMs": 13,
+      "totalMs": 20,
+      "attempts": 3,
+      "finalUrl": "http://127.0.0.1:4210/ok",
+      "redirects": 0,
+      "fetchError": null,
+      "successRate": 1
+    },
+    "provenance": "live-http",
+    "limitations": [
+      "A URL gives access only to what the site publicly serves — status, timing, content, links, tags. It does not reveal ad spend, clicks, conversions or private analytics.",
+      "Produced by the deterministic policy (no AI): fixed rules and report templates applied to the tool results."
+    ],
+    "whatChanged": "1 same-site link(s) or form action(s) are broken. [E5, E6]",
+    "observations": [
+      {
+        "statement": "GET http://127.0.0.1:4210/ok returned 200 in 20 ms (TTFB 13 ms), 1360 bytes.",
+        "evidenceIds": [
+          "E1"
+        ]
+      },
+      {
+        "statement": "Page analysis: title present, meta description present, 1 h1, 28 words, 1 form, 2 CTAs, 3 internal / 1 external links, viewport meta present, lang set, HSTS yes, CSP yes.",
+        "evidenceIds": [
+          "E2"
+        ]
+      },
+      {
+        "statement": "Tracking tags found in the HTML: GA4 (G-ABC123XYZ9); GTM (GTM-K9F2Q7P).",
+        "evidenceIds": [
+          "E3"
+        ]
+      },
+      {
+        "statement": "3/3 attempts succeeded (100%) for http://127.0.0.1:4210/ok; results 200, 200, 200; time min/median/max 9/11/18 ms.",
+        "evidenceIds": [
+          "E4"
+        ]
+      },
+      {
+        "statement": "Checked 3 same-site links: 1 broken (http://127.0.0.1:4210/submit → 404).",
+        "evidenceIds": [
+          "E5"
+        ]
+      }
+    ],
+    "toolFailures": [],
+    "evidenceIndex": {
+      "E1": "GET http://127.0.0.1:4210/ok returned 200 in 20 ms (TTFB 13 ms), 1360 bytes.",
+      "E2": "Page analysis: title present, meta description present, 1 h1, 28 words, 1 form, 2 CTAs, 3 internal / 1 external links, viewport meta present, lang set, HSTS yes, CSP yes.",
+      "E3": "Tracking tags found in the HTML: GA4 (G-ABC123XYZ9); GTM (GTM-K9F2Q7P).",
+      "E4": "3/3 attempts succeeded (100%) for http://127.0.0.1:4210/ok; results 200, 200, 200; time min/median/max 9/11/18 ms.",
+      "E5": "Checked 3 same-site links: 1 broken (http://127.0.0.1:4210/submit → 404).",
+      "E6": "Link http://127.0.0.1:4210/submit is broken: HEAD returned 404."
+    },
+    "schemaVersion": "1",
+    "securityNotes": [],
+    "severityRationale": "The most severe finding is a site content problem.",
+    "recommendedActions": [
+      {
+        "action": "Fix or remove the broken links and form actions.",
+        "priority": "now",
+        "rationale": "1 same-site link(s) or form action(s) are broken.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      }
+    ],
+    "validationWarnings": []
+  }
+}

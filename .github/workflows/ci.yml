@@ -1,0 +1,44 @@
+# NOT YET RUN ON GITHUB. The same two commands pass on the developer's machine (see docs/verification.md);
+# this workflow is the CI translation of them and may need small fixes on its first real run.
+# Not covered here: `pnpm test:ui` (needs Chromium and a running stack) and the real Claude Code / Codex verification scripts.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: campaign_sentinel_test
+          # CI only: throwaway database, no password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d campaign_sentinel_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL_TEST: postgresql://postgres@localhost:5432/campaign_sentinel_test
+    steps:
+      - uses: actions/checkout@v4
+      # the pnpm version comes from "packageManager" in package.json
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # typecheck + lint + unit tests of every package
+      - run: pnpm check
+      # integration + end-to-end tests against the Postgres service (offline: local fixture site, scripted/deterministic models)
+      - run: pnpm test:int

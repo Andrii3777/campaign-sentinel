@@ -1,0 +1,242 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "cjs"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Synthetic demo data (spec §8). Tools read these through CampaignDataRepository.
+// ---------------------------------------------------------------------------
+
+model Campaign {
+  id                   String   @id
+  name                 String
+  channels             String
+  conversionEvent      String // "lead_submitted" | "purchase"
+  scenarioKey          String? // links to contracts scenarioCatalogue; tools never read it
+  dataStart            DateTime @db.Date
+  dataEnd              DateTime @db.Date
+  defaultBaselineStart DateTime @db.Date
+  defaultBaselineEnd   DateTime @db.Date
+  defaultCurrentStart  DateTime @db.Date
+  defaultCurrentEnd    DateTime @db.Date
+  /// e.g. {"inspect_tracking_health": "timeout"} — that tool fails with UPSTREAM_UNAVAILABLE
+  simulatedFaults      Json     @default("{}")
+  createdAt            DateTime @default(now())
+
+  dailyMetrics   DailyMetric[]
+  funnelEvents   FunnelEventDaily[]
+  pageChecks     LandingPageCheck[]
+  pageSnapshots  LandingPageSnapshot[]
+  changeLog      ChangeLogEntry[]
+  investigations Investigation[]
+}
+
+model DailyMetric {
+  id                  Int      @id @default(autoincrement())
+  campaignId          String
+  date                DateTime @db.Date
+  source              String
+  device              String
+  clicks              Int
+  sessions            Int
+  trackedConversions  Int
+  backendConversions  Int
+  spend               Decimal  @db.Decimal(12, 2)
+  campaign            Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date, source, device])
+}
+
+model FunnelEventDaily {
+  id         Int      @id @default(autoincrement())
+  campaignId String
+  date       DateTime @db.Date
+  device     String
+  eventName  String
+  count      Int
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date, device, eventName])
+}
+
+model LandingPageCheck {
+  id            Int      @id @default(autoincrement())
+  campaignId    String
+  checkedAt     DateTime
+  device        String
+  statusCode    Int
+  responseMs    Int
+  deployVersion String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, checkedAt])
+}
+
+model LandingPageSnapshot {
+  id            Int      @id @default(autoincrement())
+  campaignId    String
+  capturedAt    DateTime
+  deployVersion String
+  url           String
+  html          String
+  campaign      Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, capturedAt])
+}
+
+model ChangeLogEntry {
+  id          Int      @id @default(autoincrement())
+  campaignId  String
+  at          DateTime
+  category    String
+  title       String
+  description String
+  author      String?
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, at])
+}
+
+// ---------------------------------------------------------------------------
+// Investigation ledger (spec §5.1). Written only through LedgerService.
+// ---------------------------------------------------------------------------
+
+enum InvestigationMode {
+  DEMO
+  URL
+}
+
+enum InvestigationStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  INTERRUPTED
+}
+
+enum ToolExecutionStatus {
+  REQUESTED
+  REJECTED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model Investigation {
+  id              String              @id @default(cuid())
+  mode            InvestigationMode
+  campaignId      String?
+  targetUrl       String?
+  question        String
+  baselineStart   DateTime?           @db.Date
+  baselineEnd     DateTime?           @db.Date
+  currentStart    DateTime?           @db.Date
+  currentEnd      DateTime?           @db.Date
+  source          String // web | api | mcp
+  runtime         String // deterministic | ai | external | openclaw (ai: provider:model in `model`)
+  clientName      String?
+  clientVersion   String?
+  clientUserAgent String?
+  model           String?
+  status          InvestigationStatus @default(QUEUED)
+  failureCode     String?
+  failureMessage  String?
+  idempotencyKey  String?             @unique
+  retryOfId       String?
+  provenance      Json                @default("{}")
+  modelTurns      Int                 @default(0)
+  toolCalls       Int                 @default(0)
+  reportAttempts  Int                 @default(0)
+  httpRequests    Int                 @default(0)
+  inputTokens     Int                 @default(0)
+  outputTokens    Int                 @default(0)
+  /// internal counters for gap-free event seq and evidence refs (row-locked increments)
+  lastEventSeq    Int                 @default(0)
+  lastEvidenceNo  Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  lastActivityAt  DateTime            @default(now())
+
+  campaign       Campaign?            @relation(fields: [campaignId], references: [id])
+  retryOf        Investigation?       @relation("Retry", fields: [retryOfId], references: [id])
+  retries        Investigation[]      @relation("Retry")
+  events         InvestigationEvent[]
+  toolExecutions ToolExecution[]
+  evidence       Evidence[]
+  report         Report?
+
+  @@index([createdAt])
+  @@index([status, lastActivityAt])
+}
+
+model InvestigationEvent {
+  id              String        @id @default(cuid())
+  investigationId String
+  seq             Int
+  type            String
+  at              DateTime      @default(now())
+  payload         Json
+  investigation   Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+
+  @@unique([investigationId, seq])
+}
+
+model ToolExecution {
+  id              String              @id @default(cuid())
+  investigationId String
+  tool            String
+  callerRef       String?
+  input           Json
+  reason          String
+  status          ToolExecutionStatus @default(REQUESTED)
+  attempt         Int                 @default(0)
+  errorCode       String?
+  errorMessage    String?
+  output          Json?
+  outputTruncated Boolean             @default(false)
+  createdAt       DateTime            @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  durationMs      Int?
+  investigation   Investigation       @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  evidence        Evidence[]
+
+  @@unique([investigationId, callerRef])
+  @@index([investigationId, createdAt])
+}
+
+model Evidence {
+  id              String        @id @default(cuid())
+  investigationId String
+  ref             String
+  toolExecutionId String
+  kind            String
+  strength        String
+  statement       String
+  data            Json
+  provenance      String
+  createdAt       DateTime      @default(now())
+  investigation   Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  toolExecution   ToolExecution @relation(fields: [toolExecutionId], references: [id], onDelete: Cascade)
+
+  @@unique([investigationId, ref])
+}
+
+model Report {
+  investigationId String        @id
+  schemaVersion   String        @default("1")
+  verdict         String
+  severity        String
+  payload         Json
+  summary         String
+  createdAt       DateTime      @default(now())
+  investigation   Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+}

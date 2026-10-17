@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1",
+  "verdict": "cause_identified",
+  "severity": "critical",
+  "summary": "The tracked conversion rate went from 4.06% to 2.66% (−34.4%) between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16, driven by mobile visitors: the landing page returned 5xx to 21.4% of mobile checks with p95 8341 ms after version v2.0.0 went live. Backend-confirmed conversions fell too, so this is a real loss, not a tracking artefact.",
+  "createdAt": "2026-10-17T16:49:41.844Z",
+  "payload": {
+    "model": "deterministic-policy-v1",
+    "runtime": "deterministic",
+    "summary": "The tracked conversion rate went from 4.06% to 2.66% (−34.4%) between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16, driven by mobile visitors: the landing page returned 5xx to 21.4% of mobile checks with p95 8341 ms after version v2.0.0 went live. Backend-confirmed conversions fell too, so this is a real loss, not a tracking artefact.",
+    "verdict": "cause_identified",
+    "severity": "critical",
+    "unknowns": [],
+    "hypotheses": [
+      {
+        "id": "H1",
+        "status": "supported",
+        "category": "landing_page",
+        "statement": "The landing page release v2.0.0 fails for mobile visitors (server errors and slow responses), so they cannot convert.",
+        "confidence": "high",
+        "confidenceRationale": "Two direct items (device decomposition, device 5xx rate) agree and nothing contradicts them.",
+        "supportingEvidenceIds": [
+          "E6",
+          "E9",
+          "E10"
+        ],
+        "contradictingEvidenceIds": []
+      },
+      {
+        "id": "H2",
+        "status": "ruled_out",
+        "category": "tracking",
+        "statement": "A tracking loss: pixel and backend conversions agree.",
+        "confidence": "medium",
+        "confidenceRationale": "The cited evidence contradicts it.",
+        "supportingEvidenceIds": [],
+        "contradictingEvidenceIds": [
+          "E12"
+        ]
+      }
+    ],
+    "keyMetrics": {
+      "ci95": [
+        -0.018194,
+        -0.009751
+      ],
+      "pValue": 9.12e-11,
+      "current": {
+        "period": {
+          "end": "2026-10-16",
+          "start": "2026-10-03"
+        },
+        "sessions": 13952,
+        "conversions": 371,
+        "conversionRate": 0.026591
+      },
+      "baseline": {
+        "period": {
+          "end": "2026-10-02",
+          "start": "2026-09-19"
+        },
+        "sessions": 13978,
+        "conversions": 567,
+        "conversionRate": 0.040564
+      },
+      "isSignificant": true,
+      "absoluteChange": -0.013973,
+      "relativeChange": -0.3445,
+      "conversionsPerDayDifference": -14
+    },
+    "provenance": "synthetic-demo",
+    "limitations": [
+      "Produced by the deterministic policy (no AI): fixed rules and report templates applied to the tool results."
+    ],
+    "whatChanged": "CR 4.06% → 2.66% [E2]; mobile explains most of the change [E6]; mobile errors and latency rose [E9].",
+    "observations": [
+      {
+        "statement": "Between 2026-09-19…2026-10-02 vs 2026-10-03…2026-10-16 the tracked conversion rate went from 4.06% to 2.66% (−34.4%); the change is statistically significant (p < 0.001).",
+        "evidenceIds": [
+          "E2"
+        ]
+      },
+      {
+        "statement": "Daily conversion rate averaged 4.07% before 2026-10-04 and 2.54% from 2026-10-04 on (change point; 15 vs 13 days, −37.7%).",
+        "evidenceIds": [
+          "E3"
+        ]
+      },
+      {
+        "statement": "mobile explains 103% of the tracked CR change (−1.43 pp of −1.40 pp): share of sessions 60.2% → 60.0%, CR 3.88% → 1.48%, clicks→sessions 0.9 → 0.9.",
+        "evidenceIds": [
+          "E6"
+        ]
+      },
+      {
+        "statement": "mobile: 5xx rate 0.0% → 21.4%, availability 100.0% → 78.6%, p95 1,694 → 8,341 ms, p50 1,303 → 2,982 ms (56 checks in the current period).",
+        "evidenceIds": [
+          "E9"
+        ]
+      },
+      {
+        "statement": "Deployed version changed v1.9.3 → v2.0.0, first seen by monitoring at 2026-10-04 12:00 UTC.",
+        "evidenceIds": [
+          "E10"
+        ]
+      },
+      {
+        "statement": "Pixel and backend agree: the pixel recorded 97% of backend-confirmed conversions in the baseline (567 of 586) and 97% in the current period (371 of 382).",
+        "evidenceIds": [
+          "E12"
+        ]
+      }
+    ],
+    "toolFailures": [],
+    "evidenceIndex": {
+      "E1": "Baseline 2026-09-19…2026-10-02: 13,978 sessions, 567 tracked conversions, CR 4.06%, spend $26,094.16; current 2026-10-03…2026-10-16: 13,952 sessions, 371 tracked conversions, CR 2.66%, spend $26,051.1.",
+      "E2": "Tracked CR changed from 4.06% (567 / 13,978 sessions, 2026-09-19…2026-10-02) to 2.66% (371 / 13,952 sessions, 2026-10-03…2026-10-16): −1.40 pp (−34.4%); two-proportion z-test p < 0.001, 95% CI of the difference [−1.82 pp, −0.98 pp] — significant; −14.0 tracked conversions/day.",
+      "E3": "Daily conversion rate averaged 4.07% before 2026-10-04 and 2.54% from 2026-10-04 on (change point; 15 vs 13 days, −37.7%).",
+      "E4": "No source explains the CR change out of proportion to its traffic: the largest contributor, google_search, accounts for 50% of the −1.40 pp change with 49.9% of baseline sessions.",
+      "E5": "All 3 source segments changed CR by a similar relative amount (−35.0% to −33.6%); mix effect −0.00 pp, rate effect −1.40 pp.",
+      "E6": "mobile explains 103% of the tracked CR change (−1.43 pp of −1.40 pp): share of sessions 60.2% → 60.0%, CR 3.88% → 1.48%, clicks→sessions 0.9 → 0.9.",
+      "E7": "CR changes differ across device segments (−61.8% to +2.1%); mix effect +0.00 pp, rate effect −1.40 pp.",
+      "E8": "desktop: 5xx rate 0.0% → 0.0%, availability 100.0% → 100.0%, p95 1,002 → 970 ms, p50 769 → 739 ms (56 checks in the current period).",
+      "E9": "mobile: 5xx rate 0.0% → 21.4%, availability 100.0% → 78.6%, p95 1,694 → 8,341 ms, p50 1,303 → 2,982 ms (56 checks in the current period).",
+      "E10": "Deployed version changed v1.9.3 → v2.0.0, first seen by monitoring at 2026-10-04 12:00 UTC.",
+      "E11": "Snapshot of v2.0.0 captured 2026-10-16: form present, tracking tags: gtag; page text is returned as untrusted content.",
+      "E12": "Pixel and backend agree: the pixel recorded 97% of backend-confirmed conversions in the baseline (567 of 586) and 97% in the current period (371 of 382).",
+      "E13": "Largest funnel step change: page_view→form_start 0.1828 → 0.1215 (−33.5%); other steps: form_start→form_submit 0.2688 → 0.2655, form_submit→lead_submitted 0.8425 → 0.8413.",
+      "E14": "Change #1 at 2026-09-28 10:00 UTC, category traffic, by ppc-manager (text in untrusted content).",
+      "E15": "Change #2 at 2026-10-04 09:40 UTC, category deploy, by web-team (text in untrusted content).",
+      "E16": "Change #3 at 2026-10-09 15:00 UTC, category other, by media-buyer (text in untrusted content)."
+    },
+    "schemaVersion": "1",
+    "securityNotes": [
+      "Possible prompt injection in landing page snapshot v2.0.0 (2026-10-16) (signals: ignore_instructions, addresses_ai, report_manipulation, budget_manipulation); the text was treated as data and its instructions were ignored."
+    ],
+    "severityRationale": "Backend-confirmed conversions fell by −34.8% and the tracked rate by −34.4%.",
+    "recommendedActions": [
+      {
+        "action": "Roll back or fix the landing page version v2.0.0 for mobile visitors.",
+        "priority": "now",
+        "rationale": "mobile visitors get server errors and slow pages.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      },
+      {
+        "action": "Alert on landing-page 5xx rate and p95 latency per device.",
+        "priority": "next",
+        "rationale": "The failure went unnoticed until conversions dropped.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      },
+      {
+        "action": "Rerun this investigation after the fix to confirm the mobile conversion rate recovers.",
+        "priority": "later",
+        "rationale": "Confirms the cause.",
+        "hypothesisIds": [
+          "H1"
+        ]
+      }
+    ],
+    "validationWarnings": []
+  }
+}

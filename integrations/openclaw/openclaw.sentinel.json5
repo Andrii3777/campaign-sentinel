@@ -1,0 +1,59 @@
+// OpenClaw config fragment for Campaign Sentinel (status: verified once on Windows, see docs/openclaw.md).
+// Merge it into ~/.openclaw/openclaw.json (see docs/openclaw.md). Shapes follow the OpenClaw docs:
+//   docs/gateway/config-extensions.md (mcp.servers), docs/gateway/security/hardened-baseline.md,
+//   docs/gateway/openresponses-http-api.md (gateway.http.endpoints.responses).
+// Replace every <...> placeholder. Never paste real tokens into this repository.
+{
+  gateway: {
+    mode: "local",
+    bind: "loopback",
+    // The same value goes into OPENCLAW_GATEWAY_TOKEN in Sentinel's .env.
+    auth: { mode: "token", token: "<OPENCLAW_GATEWAY_TOKEN>" },
+    http: {
+      endpoints: {
+        // POST /v1/responses is disabled by default; the app-side dispatcher needs it.
+        responses: { enabled: true },
+      },
+    },
+  },
+
+  // Integration A: our MCP server (stdio), the same apps/mcp used by Claude Code and Codex.
+  mcp: {
+    servers: {
+      "campaign-sentinel": {
+        command: "node",
+        // Absolute path to the built server: run `pnpm build` first.
+        args: ["<ABSOLUTE PATH TO REPO>/apps/mcp/dist/index.js"],
+        // apps/mcp finds SENTINEL_API_URL and SENTINEL_AGENT_TOKEN itself: environment first, then the repository
+        // .env located from the server file (not the working directory), so no env block is needed on the same machine.
+        // Only if the API runs elsewhere (or you want to bypass .env), uncomment and fill in; never commit the token:
+        // env: { SENTINEL_API_URL: "http://127.0.0.1:4000", SENTINEL_AGENT_TOKEN: "<SENTINEL_AGENT_TOKEN>" },
+      },
+    },
+  },
+
+  agents: {
+    entries: {
+      // A locked-down agent that can only use Sentinel's tools.
+      sentinel: {
+        tools: {
+          allow: ["campaign-sentinel__*"],
+          // Hardened-baseline denies (re-checked by `openclaw security audit`).
+          deny: ["group:automation", "group:runtime", "group:fs", "sessions_spawn", "sessions_send"],
+          // Needed on the claude-cli backend: Claude Code defers MCP schemas behind its own ToolSearch, which the global
+          // `tools.exec` deny below refuses. WARNING: on claude-cli the native Read tool still works for this agent (probe
+          // read C:/Windows/win.ini); allow/deny does not cover it. See docs/openclaw.md before using URL mode.
+          exec: { security: "full", ask: "off" },
+        },
+      },
+    },
+  },
+
+  // Hardened baseline for everything else on this gateway.
+  tools: {
+    exec: { security: "deny", ask: "always" },
+    elevated: { enabled: false },
+    sessions: { visibility: "agent" },
+    agentToAgent: { enabled: false },
+  },
+}

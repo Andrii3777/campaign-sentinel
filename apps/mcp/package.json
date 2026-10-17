@@ -1,0 +1,16 @@
+{
+  "name": "@campaign-sentinel/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@campaign-sentinel/contracts": "workspace:*",
+    "@modelcontextprotocol/sdk": "~1.32.1",
+    "zod": "^4.6.7"
+  }
+}
